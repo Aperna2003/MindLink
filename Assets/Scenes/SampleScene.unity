@@ -4260,6 +4260,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuestLikePanel
   panelRoot: {fileID: 1375737375}
+  grabBar: {fileID: 773190230}
   userCamera: {fileID: 249625659}
 --- !u!65 &773190234
 BoxCollider:

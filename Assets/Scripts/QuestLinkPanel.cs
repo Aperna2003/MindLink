@@ -10,10 +10,10 @@ public class QuestLikePanelHandle : MonoBehaviour
 
     private Grabbable grab;
 
-    private Quaternion lastRotation;
-    private Vector3 grabOffset;
+    private Quaternion lastPanelRotation;   // rotazione pannello
+    private Quaternion lastHandleRotation;  // rotazione barra
 
-    // Offset locale iniziale della barra rispetto al pannello
+    private Vector3 grabOffset;
     private Vector3 initialLocalPos;
 
     void Awake()
@@ -23,13 +23,11 @@ public class QuestLikePanelHandle : MonoBehaviour
         if (panelRoot == null)
             panelRoot = transform.parent;
 
-        // Salva offset mondo → pannello
         grabOffset = panelRoot.position - transform.position;
-
-        // Salva posizione locale della barra (per bloccare asse Z)
         initialLocalPos = transform.localPosition;
 
-        lastRotation = panelRoot.rotation;
+        lastPanelRotation = panelRoot.rotation;
+        lastHandleRotation = transform.rotation;
     }
 
     void LateUpdate()
@@ -42,44 +40,38 @@ public class QuestLikePanelHandle : MonoBehaviour
         {
             MovePanelWithHandle();
             RotateHandleTowardsCamera();
+
+            lastHandleRotation = transform.rotation;
         }
         else
         {
-            // Mantieni l'ultima rotazione
-            panelRoot.rotation = lastRotation;
+   
+            panelRoot.rotation = lastPanelRotation;
+            transform.rotation = lastHandleRotation;
 
-            // Assicura che la barra non scappi mai
             LockHandleLocalZ();
         }
     }
 
     void MovePanelWithHandle()
     {
-        // Mantieni offset originale barra -> pannello
         panelRoot.position = transform.position + grabOffset;
 
-        // Rotazione pannello verso camera
         Vector3 lookDir = userCamera.position - panelRoot.position;
 
         if (lookDir.sqrMagnitude > 0.001f)
         {
             Quaternion targetRot = Quaternion.LookRotation(-lookDir.normalized, Vector3.up);
+            panelRoot.rotation = Quaternion.Slerp(panelRoot.rotation, targetRot, Time.deltaTime * 10f);
 
-            panelRoot.rotation = Quaternion.Slerp(
-                panelRoot.rotation, targetRot,
-                Time.deltaTime * 10f
-            );
-
-            lastRotation = panelRoot.rotation;
+            lastPanelRotation = panelRoot.rotation;
         }
 
-        // Blocca la barra all'offset locale corretto (no fuga Z)
         LockHandleLocalZ();
     }
 
     void RotateHandleTowardsCamera()
     {
-        // La barra guarda sempre la camera
         Vector3 dir = userCamera.position - transform.position;
 
         if (dir.sqrMagnitude > 0.0001f)
@@ -88,12 +80,8 @@ public class QuestLikePanelHandle : MonoBehaviour
 
     void LockHandleLocalZ()
     {
-        // Mantieni posizione locale originale
         Vector3 local = transform.localPosition;
-
-        // Blocca la componente Z
         local.z = initialLocalPos.z;
-
         transform.localPosition = local;
     }
 }
